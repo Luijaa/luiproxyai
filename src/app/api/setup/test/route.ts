@@ -75,15 +75,27 @@ export async function POST(req: NextRequest) {
       const { url, headers } = buildHeaders(modelsUrl);
       const res = await fetch(url, { headers, signal: AbortSignal.timeout(15000) });
       if (res.ok) {
-        const json = await res.json().catch(() => ({}));
-        const models =
-          (Array.isArray(json.data) ? json.data.length : 0) ||
-          (Array.isArray(json.models) ? json.models.length : 0) ||
-          (Array.isArray(json.result) ? json.result.length : 0) ||
-          (Array.isArray(json) ? json.length : 0);
-        return NextResponse.json({ ok: true, models });
-      }
-      if (res.status !== 405 && res.status !== 404) {
+        // A 200 only proves the key when the endpoint actually requires one.
+        // Some providers serve their model list publicly (SambaNova returns
+        // 200 with no Authorization header at all), so a wrong key would sail
+        // through and get saved. Re-probe anonymously: if that also succeeds,
+        // the list proves nothing about the key — fall through to the chat
+        // probe below, which does exercise auth. A failed/blocked anonymous
+        // probe means the list is gated, so the 200 above is meaningful.
+        const anon = await fetch(modelsUrl, {
+          headers: { "Content-Type": "application/json" },
+          signal: AbortSignal.timeout(10000),
+        }).catch(() => null);
+        if (!anon?.ok) {
+          const json = await res.json().catch(() => ({}));
+          const models =
+            (Array.isArray(json.data) ? json.data.length : 0) ||
+            (Array.isArray(json.models) ? json.models.length : 0) ||
+            (Array.isArray(json.result) ? json.result.length : 0) ||
+            (Array.isArray(json) ? json.length : 0);
+          return NextResponse.json({ ok: true, models });
+        }
+      } else if (res.status !== 405 && res.status !== 404) {
         const text = await res.text().catch(() => "");
         return NextResponse.json({ ok: false, error: `HTTP ${res.status}${text ? `: ${text.slice(0, 200)}` : ""}` });
       }
