@@ -4,10 +4,12 @@ name: sml-gateway
 #   docker compose -f docker-compose.yml -f docker-compose.lui.yml up -d --build
 #
 # Differences vs. docker-compose.yml:
-#   - Caddy binds 127.0.0.1:8335 only. Hermes runs on the same host and talks
-#     to http://127.0.0.1:8335/v1 directly; nothing needs a firewalld hole.
-#     To publish it, point an nginx-proxy-manager vhost at <docker bridge ip>:8335
-#     (and remember NPM regenerates its .conf from database.sqlite on restart).
+#   - Caddy binds 0.0.0.0:8335. It is NOT reachable from the internet: the
+#     firewalld `public` zone opens only ssh + 3478/udp, 51820/udp, 1688/tcp.
+#     The wide bind is required because nginx-proxy-manager runs in a
+#     container and cannot reach the host's loopback — its vhost forwards to
+#     172.18.0.1:8335 (the npm-net bridge gateway), same as the other sites.
+#     Hermes runs on this host and talks to http://127.0.0.1:8335/v1 directly.
 #   - Postgres/Valkey are internal-only (no host ports).
 #   - Memory trimmed: this box also runs Hermes + antigravity-bridge + NPM.
 #   - Env comes from .env.production instead of .env.local.
@@ -26,7 +28,7 @@ services:
 
   caddy:
     ports: !override
-      - "127.0.0.1:8335:80"
+      - "8335:80"
     volumes: !override
       - ./caddy-prod.Caddyfile:/etc/caddy/Caddyfile:ro
     restart: unless-stopped

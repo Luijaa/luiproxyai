@@ -32,7 +32,7 @@ When writing/rewriting README.md, AGENTS.md, or any docs file: describe ONLY wha
 | Port | Service |
 |------|---------|
 | 3334 | gateway via in-compose Caddy — local dev (`docker-compose.yml`) |
-| 8335 | gateway via in-compose Caddy — lui-cloud (`docker-compose.lui.yml`, bound to 127.0.0.1) |
+| 8335 | gateway via in-compose Caddy — lui-cloud (`docker-compose.lui.yml`); firewalld keeps it off the internet, nginx-proxy-manager forwards to 172.18.0.1:8335 |
 | 5434 | Postgres, host-exposed in local dev only |
 | 6382 | Valkey, host-exposed in local dev only |
 
