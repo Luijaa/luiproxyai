@@ -105,9 +105,18 @@ const ENV_BY_PROVIDER: Record<string, string> = {
   ai21: "AI21_API_KEY",
 };
 
-export async function seedProviderCatalog(): Promise<void> {
+/**
+ * Write the hardcoded provider table into `provider_catalog`.
+ *
+ * Purely local — reads PROVIDER_URLS / SEED_NOTES from the source tree and
+ * touches nothing on the internet, so it is safe to run in hardcoded mode.
+ * `only` narrows the seed to a set of provider names (the free catalog, in
+ * hardcoded mode) so paid providers never get a row.
+ */
+export async function seedProviderCatalog(only?: ReadonlySet<string>): Promise<void> {
   const sql = getSqlClient();
   for (const [name, baseUrl] of Object.entries(PROVIDER_URLS)) {
+    if (only && !only.has(name)) continue;
     const meta = SEED_NOTES[name] ?? {};
     await sql`
       INSERT INTO provider_catalog (name, label, base_url, env_var, homepage, status, source, free_tier, notes,

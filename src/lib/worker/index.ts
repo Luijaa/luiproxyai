@@ -5,6 +5,8 @@ import { runExams } from "./exam";
 import { appointTeachers } from "@/lib/teacher";
 import { acquireLeader, renewLeader, releaseLeader } from "./leader";
 import { startWarmup, stopWarmup } from "./warmup";
+import { seedProviderCatalog } from "./provider-discovery";
+import { getHardcodedFreeProviders } from "@/lib/free-model-catalog";
 
 export { scanModels } from "./scanner";
 export { checkHealth } from "./health";
@@ -114,7 +116,17 @@ export async function runWorkerCycle(): Promise<void> {
     let healthResult = { checked: 0, available: 0, cooldown: 0 };
     let examResult: { examined: number; passed: number; failed: number; level: string } = { examined: 0, passed: 0, failed: 0, level: "middle" };
 
-    await logWorker("worker", "Step 0: provider/model auto-discovery disabled — using hardcoded free remote catalog");
+    // Step 0: no internet discovery in hardcoded mode, but provider_catalog
+    // still has to exist — /api/setup/test reads base_url / models_url /
+    // auth_scheme from it, and an empty table makes every provider except
+    // openrouter fail with "Provider not in catalog". Seeding is local-only
+    // (PROVIDER_URLS + SEED_NOTES) and limited to the free catalog.
+    try {
+      await seedProviderCatalog(new Set(getHardcodedFreeProviders()));
+      await logWorker("worker", "Step 0: seeded provider_catalog from the hardcoded free catalog (no internet discovery)");
+    } catch (err) {
+      await logWorker("worker", `Step 0 (seed provider_catalog) failed: ${err}`, "error");
+    }
 
     try {
       // Step 1: Scan
