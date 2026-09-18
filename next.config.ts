@@ -10,7 +10,6 @@ const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  serverExternalPackages: ["undici"],
   poweredByHeader: false,
   async headers() {
     return [

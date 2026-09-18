@@ -22,16 +22,7 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# Copy better-sqlite3 native module and its dependencies
-COPY --from=builder /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
-COPY --from=builder /app/node_modules/bindings ./node_modules/bindings
-COPY --from=builder /app/node_modules/file-uri-to-path ./node_modules/file-uri-to-path
-COPY --from=builder /app/node_modules/prebuild-install ./node_modules/prebuild-install
-
-# Copy undici for keep-alive HTTP agent (not bundled by Next.js standalone)
-COPY --from=builder /app/node_modules/undici ./node_modules/undici
-
-# Create data directory for SQLite
+# Runtime data dir (mounted as a volume in compose)
 RUN mkdir -p /app/data
 
 EXPOSE 3000
