@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSqlClient } from "@/lib/db/schema";
 import { costPolicyBlockMessage, isProviderCostAllowed } from "@/lib/cost-policy";
+import { getActiveFreeModelCatalog } from "@/lib/free-model-catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -111,11 +112,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "No endpoint configured for this provider" });
   }
   const { url: chatPostUrl, headers: chatHeaders } = buildHeaders(chatUrl);
+  // Probe with a real model from the hardcoded catalog. A placeholder name is
+  // not safe: SambaNova validates the model before the key and answers 404
+  // `model_not_found` for an unknown one whether or not the key is valid, so a
+  // bad key reads as "endpoint reachable, body rejected" and gets saved. With a
+  // model the provider actually serves, the same bad key returns 401.
+  const probeModel = getActiveFreeModelCatalog().find((m) => m.provider === provider)?.modelId ?? "__probe__";
   const body = JSON.stringify({
-    // Best-effort — provider might reject model name; we only care about whether
-    // auth passes. Most providers return 400 with a clear "invalid model" when
-    // the key is good, which we count as "key ok + endpoint alive".
-    model: "__probe__",
+    model: probeModel,
     messages: [{ role: "user", content: "hi" }],
     max_tokens: 1,
   });
@@ -124,6 +128,10 @@ export async function POST(req: NextRequest) {
     if (res.ok) return NextResponse.json({ ok: true, models: 1, note: "verified via chat probe" });
     if (res.status === 401 || res.status === 403) {
       return NextResponse.json({ ok: false, error: `HTTP ${res.status}: invalid key` });
+    }
+    if (res.status === 429) {
+      // Rate limited — the request got past the auth layer, so the key is good.
+      return NextResponse.json({ ok: true, models: 1, note: "key ok (HTTP 429 — provider rate limit, auth passed)" });
     }
     if (res.status === 502 || res.status === 503 || res.status === 504) {
       // Upstream is down but auth layer didn't reject us — the key is almost
@@ -140,7 +148,11 @@ export async function POST(req: NextRequest) {
     // certainly valid (401 would have been returned first). Accept the save.
     const text = await res.text().catch(() => "");
     if (res.status >= 400 && res.status < 500) {
-      return NextResponse.json({ ok: true, models: 1, note: `key ok (HTTP ${res.status} on probe — provider rejected dummy prompt, which is expected)` });
+      return NextResponse.json({
+        ok: true,
+        models: 1,
+        note: `key ok (HTTP ${res.status} on probe with model ${probeModel} — auth passed, body rejected)${text ? `: ${text.slice(0, 200)}` : ""}`,
+      });
     }
     return NextResponse.json({ ok: false, error: `HTTP ${res.status}${text ? `: ${text.slice(0, 200)}` : ""}` });
   } catch (err) {
