@@ -1,4 +1,4 @@
-const URL = 'https://smlgateway.smlsoftdemo.com';
+const URL = process.env.GATEWAY_URL || 'http://localhost:3334';
 const KEY = process.env.GATEWAY_API_KEY;
 const prompts = [
   'ลูกค้าจังหวัดเชียงใหม่ มีกี่ร้าน',

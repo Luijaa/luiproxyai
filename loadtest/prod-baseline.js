@@ -2,7 +2,7 @@ import http from 'k6/http';
 import { check } from 'k6';
 import { Trend, Counter } from 'k6/metrics';
 
-// Target: production https://smlgateway.smlsoftdemo.com through Cloudflare.
+// Target: the deployed gateway (set BASE_URL, e.g. -e BASE_URL=https://gw.example.com).
 // Two back-to-back profiles: cached (repeat prompt) then uncached (unique).
 export const options = {
   scenarios: {
@@ -33,7 +33,7 @@ export const options = {
   thresholds: { 'http_req_failed': ['rate<0.3'] },
 };
 
-const URL = 'https://smlgateway.smlsoftdemo.com/v1/chat/completions';
+const URL = `${__ENV.BASE_URL || 'http://localhost:3334'}/v1/chat/completions`;
 const KEY = __ENV.KEY || '';
 
 const cachedMs = new Trend('cached_ms', true);

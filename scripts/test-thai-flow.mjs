@@ -1,5 +1,5 @@
 const KEY = process.env.GATEWAY_API_KEY;
-const URL = 'https://smlgateway.smlsoftdemo.com';
+const URL = process.env.GATEWAY_URL || 'http://localhost:3334';
 
 const prompt = 'พิมพ์คำว่า สวัสดีครับ เท่านั้น ไม่ต้องพูดอย่างอื่น';
 

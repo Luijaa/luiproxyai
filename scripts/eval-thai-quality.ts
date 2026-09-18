@@ -6,13 +6,13 @@
  *
  * Usage:
  *   tsx scripts/eval-thai-quality.ts > /tmp/thai-seed.sql
- *   ssh root@<droplet> 'docker exec -i sml-gateway-postgres-1 psql -U sml -d smlgateway' < /tmp/thai-seed.sql
+ *   ssh <host> 'docker exec -i sml-gateway-postgres-1 psql -U sml -d smlgateway' < /tmp/thai-seed.sql
  *
  * Reads GATEWAY_API_KEY + GATEWAY_URL from env (or argv).
  * Progress goes to stderr; SQL goes to stdout.
  */
 
-const API_URL = process.env.GATEWAY_URL ?? 'https://smlgateway.smlsoftdemo.com';
+const API_URL = process.env.GATEWAY_URL ?? 'http://localhost:3334';
 const KEY = process.env.GATEWAY_API_KEY ?? process.argv[2];
 if (!KEY) {
   console.error('ERR: need GATEWAY_API_KEY env or first arg');

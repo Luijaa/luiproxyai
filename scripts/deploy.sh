@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Run this on the droplet after `git pull`.
-# Assumes /etc/caddy/Caddyfile already has the smlgateway site block
-# (see docs/DEPLOY.md) and .env.production is filled in.
+# Run this on lui-cloud after `git pull`.
+# Assumes .env.production is filled in (see .env.production.example).
+# Caddy binds 127.0.0.1:8335 — publish it through the host proxy if needed.
 
 set -euo pipefail
 
@@ -13,7 +13,7 @@ if [[ ! -f .env.production ]]; then
 fi
 
 echo "==> Building and starting containers..."
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.lui.yml up -d --build
 
 echo "==> Waiting for health..."
 for i in {1..30}; do
@@ -24,16 +24,16 @@ for i in {1..30}; do
   fi
   if [[ $i -eq 30 ]]; then
     echo "ERROR: health check never returned 200 within 30s (last=${code})" >&2
-    docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
-    docker compose -f docker-compose.yml -f docker-compose.prod.yml logs --tail 50 sml-gateway
+    docker compose -f docker-compose.yml -f docker-compose.lui.yml ps
+    docker compose -f docker-compose.yml -f docker-compose.lui.yml logs --tail 50 sml-gateway
     exit 1
   fi
   sleep 1
 done
 
 echo "==> Verifying container state..."
-docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+docker compose -f docker-compose.yml -f docker-compose.lui.yml ps
 
 echo
-echo "Deploy complete. Test through Cloudflare:"
-echo "    curl -s -o /dev/null -w '%{http_code}\\n' https://smlgateway.smlsoftdemo.com/api/health"
+echo "Deploy complete. Test through the public URL:"
+echo "    curl -s -o /dev/null -w '%{http_code}\\n' \"\${GATEWAY_PUBLIC_URL:-https://gw.example.com}/api/health\""

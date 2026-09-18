@@ -1,0 +1,70 @@
+name: sml-gateway
+
+# lui-cloud overlay (aarch64, Oracle Linux 9) — use with the base file:
+#   docker compose -f docker-compose.yml -f docker-compose.lui.yml up -d --build
+#
+# Differences vs. docker-compose.yml:
+#   - Caddy binds 127.0.0.1:8335 only. Hermes runs on the same host and talks
+#     to http://127.0.0.1:8335/v1 directly; nothing needs a firewalld hole.
+#     To publish it, point an nginx-proxy-manager vhost at <docker bridge ip>:8335
+#     (and remember NPM regenerates its .conf from database.sqlite on restart).
+#   - Postgres/Valkey are internal-only (no host ports).
+#   - Memory trimmed: this box also runs Hermes + antigravity-bridge + NPM.
+#   - Env comes from .env.production instead of .env.local.
+#   - No Ollama on this host; host.docker.internal resolves but fails fast and
+#     the routing layer handles that.
+
+services:
+  sml-gateway:
+    env_file: !override
+      - .env.production
+    environment:
+      DATABASE_URL: postgres://sml:sml@postgres:5432/smlgateway
+      REDIS_URL: redis://redis:6379
+      AUTH_TRUST_HOST: "true"
+    restart: unless-stopped
+
+  caddy:
+    ports: !override
+      - "127.0.0.1:8335:80"
+    volumes: !override
+      - ./caddy-prod.Caddyfile:/etc/caddy/Caddyfile:ro
+    restart: unless-stopped
+
+  postgres:
+    ports: !reset []
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=128MB"
+      - "-c"
+      - "work_mem=8MB"
+      - "-c"
+      - "effective_cache_size=512MB"
+      - "-c"
+      - "max_wal_size=1GB"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "shared_preload_libraries=pg_stat_statements"
+    restart: unless-stopped
+
+  redis:
+    ports: !reset []
+    command:
+      - valkey-server
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+      - --tcp-backlog
+      - "512"
+      - --timeout
+      - "0"
+      - --tcp-keepalive
+      - "60"
+    restart: unless-stopped
