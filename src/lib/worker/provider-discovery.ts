@@ -13,7 +13,7 @@
  *   - INSERT INTO dev_suggestions (severity='info', category='provider')
  */
 import { getSqlClient } from "@/lib/db/schema";
-import { PROVIDER_URLS, PROVIDER_LABELS } from "@/lib/providers";
+import { PROVIDER_URLS, PROVIDER_DISPLAY_NAMES } from "@/lib/providers";
 
 const DISCOVERY_TIMEOUT_MS = 5_000;
 
@@ -121,7 +121,7 @@ export async function seedProviderCatalog(only?: ReadonlySet<string>): Promise<v
     await sql`
       INSERT INTO provider_catalog (name, label, base_url, env_var, homepage, status, source, free_tier, notes,
         models_url, auth_scheme, auth_header_name)
-      VALUES (${name}, ${PROVIDER_LABELS[name] ?? name}, ${baseUrl}, ${ENV_BY_PROVIDER[name] ?? null},
+      VALUES (${name}, ${PROVIDER_DISPLAY_NAMES[name] ?? name}, ${baseUrl}, ${ENV_BY_PROVIDER[name] ?? null},
               ${meta.homepage ?? null}, 'active', 'seed', ${meta.freeTier ?? false}, ${meta.notes ?? null},
               ${meta.modelsUrl ?? null}, ${meta.authScheme ?? "bearer"}, ${meta.authHeaderName ?? null})
       ON CONFLICT (name) DO UPDATE SET

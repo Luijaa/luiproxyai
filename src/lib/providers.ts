@@ -56,6 +56,46 @@ export const PROVIDER_COMPLETIONS_URLS: Record<string, string> = {
   ollama: `${process.env.OLLAMA_BASE_URL || "http://localhost:11434"}/v1/completions`,
 };
 
+// Full provider names for anywhere a human reads one: the /setup cards, the
+// admin provider table, provider_catalog.label. PROVIDER_LABELS below stays
+// short on purpose — it is the compact badge shown next to a model id.
+export const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
+  thaillm: "ThaiLLM (NECTEC)",
+  typhoon: "Typhoon (SCB 10X)",
+  openrouter: "OpenRouter",
+  kilo: "Kilo",
+  google: "Google AI Studio",
+  groq: "Groq",
+  cerebras: "Cerebras",
+  sambanova: "SambaNova",
+  mistral: "Mistral La Plateforme",
+  ollama: "Ollama (local)",
+  github: "GitHub Models",
+  fireworks: "Fireworks AI",
+  cohere: "Cohere",
+  cloudflare: "Cloudflare Workers AI",
+  huggingface: "HuggingFace Inference",
+  nvidia: "NVIDIA NIM",
+  chutes: "Chutes",
+  llm7: "LLM7",
+  scaleway: "Scaleway",
+  pollinations: "Pollinations",
+  ollamacloud: "Ollama Cloud",
+  siliconflow: "SiliconFlow",
+  glhf: "GLHF",
+  together: "Together AI",
+  hyperbolic: "Hyperbolic",
+  zai: "Z.AI",
+  dashscope: "Alibaba DashScope",
+  reka: "Reka",
+  deepinfra: "DeepInfra",
+  novita: "Novita AI",
+  monsterapi: "MonsterAPI",
+  friendli: "FriendliAI",
+  ai21: "AI21 Labs",
+  sealion: "SEA-LION (AI Singapore)",
+};
+
 export const PROVIDER_LABELS: Record<string, string> = {
   thaillm: "ThaiLLM",
   typhoon: "Typhoon",
